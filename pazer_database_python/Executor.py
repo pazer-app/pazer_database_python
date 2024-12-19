@@ -17,3 +17,9 @@ class Executor:
 
     def sessionClient(self, name: str) -> SessionClient:
         return self.session.client(name)
+
+    def dc(self, name: str) -> DatabaseClient:
+        return self.databaseClient(name)
+
+    def sc(self, name: str) -> SessionClient:
+        return self.sessionClient(name)

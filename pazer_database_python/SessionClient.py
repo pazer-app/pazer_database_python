@@ -40,7 +40,7 @@ class SessionClient:
                 self.__state = False
 
     def _get_key(self, key: str) -> str:
-        return f"{self.__host.namespace}:{key}"
+        return f"{self.__host.namespace if self.__host.namespace not in ["", None] else "default"}:{key}"
 
     def _ensure_connection(self) -> bool:
         return self.__state and self.__client and self.__client.ping() or self.connect()
@@ -54,9 +54,11 @@ class SessionClient:
         if isinstance(data, (dict, int, bool)):
             dataForm.status = True
             if isinstance(data, int):
-                dataForm.status = True if data == 1 else False
-                dataForm.count = data
-                dataForm.items = [data]
+                if data == 0:
+                    dataForm.status = False
+                else:
+                    dataForm.count = data
+                    dataForm.items = [data]
             elif isinstance(data, dict):
                 dataForm.count = 1
                 dataForm.items = [data]

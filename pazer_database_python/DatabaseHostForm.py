@@ -7,6 +7,7 @@ class DatabaseHostFormModel(BaseModel):
 
 
 class DatabaseHostForm(DatabaseHostFormModel):
+    namespace: str = ""
     hostname: str = "localhost"
     username: str = ""
     password: str = ""

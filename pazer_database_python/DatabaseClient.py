@@ -43,6 +43,12 @@ class DatabaseClient:
                 self.__client = None
                 self.__state = False
 
+    def namespace(self) -> str:
+        return self.__host.namespace if self.__host.namespace else ""
+
+    def tableSpace(self, name: str) -> str:
+        return f"{self.__host.namespace}_{name}" if self.__host.namespace not in ["", None] else name
+
     def query(self, query: str, params: list | None = None, commit: bool = False) -> DataForm:
         if not self.connect():
             return DataForm(status=False, message=f"[DatabaseClient] Connection error -> {self.__host}")
@@ -78,17 +84,17 @@ class DatabaseClient:
             [f"`{col}` {'DESC' if order in [1, True, "true"] else 'ASC'}" for col, order in
              zip(columnsOrder, paramsOrder)]) if columnsOrder and paramsOrder else "")
         list_columns = "*" if not columnsList else ', '.join(f'`{k}`' for k in columnsList)
-        query = f"SELECT {list_columns} FROM {table} {where_clause}{order_clause}{toLimit}"
+        query = f"SELECT {list_columns} FROM {self.tableSpace(table)} {where_clause}{order_clause}{toLimit}"
         params = [f"%{v}%" if like else v for v in params]
         return self.query(query=query, params=params)
 
     def insert(self, table: str, columns: list, params: list) -> DataForm:
-        query = f"INSERT INTO {table} ({', '.join([f'`{k}`' for k in columns])}) VALUES ({', '.join(['%s'] * len(columns))})"
+        query = f"INSERT INTO {self.tableSpace(table)} ({', '.join([f'`{k}`' for k in columns])}) VALUES ({', '.join(['%s'] * len(columns))})"
         return self.query(query=query, params=params, commit=True)
 
     def update(self, table: str, columns: list, params: list, columnsValue: list, paramsValue: list,
                limit: int = 1) -> DataForm:
-        query = f"UPDATE {table} SET {', '.join([f'`{k}` = %s' for k in columnsValue])} WHERE ({' AND '.join([f'`{k}` = %s' for k in columns])}) LIMIT {limit}"
+        query = f"UPDATE {self.tableSpace(table)} SET {', '.join([f'`{k}` = %s' for k in columnsValue])} WHERE ({' AND '.join([f'`{k}` = %s' for k in columns])}) LIMIT {limit}"
         return self.query(
             query=query,
             params=paramsValue + params,
@@ -98,6 +104,6 @@ class DatabaseClient:
         sanitized_params = [[v] if not isinstance(v, (list, tuple)) else v for v in params]
         where_clause = ' AND '.join(
             [f'`{col}` IN ({", ".join(["%s"] * len(values))})' for col, values in zip(columns, sanitized_params)])
-        query = f"DELETE FROM {table} WHERE {where_clause} LIMIT {limit}"
+        query = f"DELETE FROM {self.tableSpace(table)} WHERE {where_clause} LIMIT {limit}"
         px = [item for sublist in sanitized_params for item in sublist]
         return self.query(query=query, params=px, commit=True)

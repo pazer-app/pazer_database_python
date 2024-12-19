@@ -7,7 +7,7 @@ class SessionHostFormModel(BaseModel):
 
 
 class SessionHostForm(SessionHostFormModel):
+    namespace: str = ""
     hostname: str = "localhost"
     port: int = 6379
-    namespace: str = "default"
     decode: bool = False
